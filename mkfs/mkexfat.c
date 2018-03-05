@@ -124,10 +124,18 @@ static int create(struct exfat_dev* dev)
 	return 0;
 }
 
-int mkfs(struct exfat_dev* dev, off_t volume_size)
+int mkfs(struct exfat_dev* dev, off_t volume_size, bool trim)
 {
 	if (check_size(volume_size) != 0)
 		return 1;
+
+	if (trim)
+	{
+		fputs("Trimming... ", stdout);
+		fflush(stdout);
+		exfat_generic_trim(dev, 0, volume_size);
+		puts("done.");
+	}
 
 	fputs("Creating... ", stdout);
 	fflush(stdout);
