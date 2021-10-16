@@ -550,6 +550,7 @@ int main(int argc, char* argv[])
 	char* fuse_options;
 	char* exfat_options;
 	int opt;
+	struct exfat_dev* dev;
 	int rc;
 
 	printf("FUSE exfat %s\n", VERSION);
@@ -562,7 +563,7 @@ int main(int argc, char* argv[])
 			"blkdev,"
 #endif
 			"default_permissions");
-	exfat_options = strdup("ro_fallback");
+	exfat_options = strdup("");
 	if (fuse_options == NULL || exfat_options == NULL)
 	{
 		exfat_error("failed to allocate options string");
@@ -620,7 +621,16 @@ int main(int argc, char* argv[])
 	spec = argv[optind];
 	mount_point = argv[optind + 1];
 
-	if (exfat_mount(&ef, spec, exfat_options) != 0)
+	dev = exfat_open(spec, exfat_match_option(exfat_options, "ro")
+			? EXFAT_MODE_RO : EXFAT_MODE_ANY);
+	if (dev == NULL)
+	{
+		free(exfat_options);
+		free(fuse_options);
+		return 1;
+	}
+
+	if (exfat_mount(&ef, dev, exfat_options) != 0)
 	{
 		free(exfat_options);
 		free(fuse_options);

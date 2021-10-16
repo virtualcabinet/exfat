@@ -123,9 +123,9 @@ static void dirck(struct exfat* ef, const char* path)
 	free(entry_path);
 }
 
-static void fsck(struct exfat* ef, const char* spec, const char* options)
+static void fsck(struct exfat* ef, struct exfat_dev* dev, const char* options)
 {
-	if (exfat_mount(ef, spec, options) != 0)
+	if (exfat_mount(ef, dev, options) != 0)
 	{
 		fputs("File system checking stopped. ", stdout);
 		return;
@@ -154,6 +154,8 @@ int main(int argc, char* argv[])
 	const char* options;
 	const char* spec = NULL;
 	struct exfat ef;
+	struct exfat_dev* dev;
+	enum exfat_mode mode = EXFAT_MODE_RW;
 
 	printf("exfatfsck %s\n", VERSION);
 
@@ -172,7 +174,8 @@ int main(int argc, char* argv[])
 			options = "repair=2";
 			break;
 		case 'n':
-			options = "repair=0,ro";
+			options = "repair=0";
+			mode = EXFAT_MODE_RO;
 			break;
 		case 'V':
 			puts("Copyright (C) 2011-2018  Andrew Nayenko");
@@ -186,8 +189,11 @@ int main(int argc, char* argv[])
 		usage(argv[0]);
 	spec = argv[optind];
 
+	dev = exfat_open(spec, mode);
+	if (dev == NULL)
+		return 1;
 	printf("Checking file system on %s.\n", spec);
-	fsck(&ef, spec, options);
+	fsck(&ef, dev, options);
 	if (exfat_errors != 0)
 	{
 		printf("ERRORS FOUND: %d, FIXED: %d.\n",

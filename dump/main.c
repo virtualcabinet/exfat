@@ -73,25 +73,20 @@ static void print_other_info(const struct exfat_super_block* sb)
 			sb->allocated_percent);
 }
 
-static int dump_sb(const char* spec)
+static int dump_sb(struct exfat_dev* dev)
 {
-	struct exfat_dev* dev;
 	struct exfat_super_block sb;
-
-	dev = exfat_open(spec, EXFAT_MODE_RO);
-	if (dev == NULL)
-		return 1;
 
 	if (exfat_read(dev, &sb, sizeof(struct exfat_super_block)) < 0)
 	{
 		exfat_close(dev);
-		exfat_error("failed to read from '%s'", spec);
+		exfat_error("failed to read super block");
 		return 1;
 	}
 	if (memcmp(sb.oem_name, "EXFAT   ", sizeof(sb.oem_name)) != 0)
 	{
 		exfat_close(dev);
-		exfat_error("exFAT file system is not found on '%s'", spec);
+		exfat_error("exFAT file system is not found");
 		return 1;
 	}
 
@@ -114,13 +109,13 @@ static void dump_sectors(struct exfat* ef)
 	puts("");
 }
 
-static int dump_full(const char* spec, bool used_sectors)
+static int dump_full(struct exfat_dev* dev, bool used_sectors)
 {
 	struct exfat ef;
 	uint32_t free_clusters;
 	uint64_t free_sectors;
 
-	if (exfat_mount(&ef, spec, "ro") != 0)
+	if (exfat_mount(&ef, dev, "ro") != 0)
 		return 1;
 
 	free_clusters = exfat_count_free_clusters(&ef);
@@ -140,7 +135,7 @@ static int dump_full(const char* spec, bool used_sectors)
 	return 0;
 }
 
-static int dump_file_fragments(const char* spec, const char* path)
+static int dump_file_fragments(struct exfat_dev* dev, const char* path)
 {
 	struct exfat ef;
 	struct exfat_node* node;
@@ -151,7 +146,7 @@ static int dump_file_fragments(const char* spec, const char* path)
 	off_t fragment_size = 0;
 	int rc = 0;
 
-	if (exfat_mount(&ef, spec, "ro") != 0)
+	if (exfat_mount(&ef, dev, "ro") != 0)
 		return 1;
 
 	rc = exfat_lookup(&ef, &node, path);
@@ -210,6 +205,7 @@ int main(int argc, char* argv[])
 	bool sb_only = false;
 	bool used_sectors = false;
 	const char* file_path = NULL;
+	struct exfat_dev* dev;
 
 	while ((opt = getopt(argc, argv, "suf:V")) != -1)
 	{
@@ -236,11 +232,15 @@ int main(int argc, char* argv[])
 		usage(argv[0]);
 	spec = argv[optind];
 
+	dev = exfat_open(spec, EXFAT_MODE_RO);
+	if (dev == NULL)
+		return 1;
+
 	if (file_path)
-		return dump_file_fragments(spec, file_path);
+		return dump_file_fragments(dev, file_path);
 
 	if (sb_only)
-		return dump_sb(spec);
+		return dump_sb(dev);
 
-	return dump_full(spec, used_sectors);
+	return dump_full(dev, used_sectors);
 }

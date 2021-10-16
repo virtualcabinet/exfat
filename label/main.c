@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
 {
 	char** pp;
 	struct exfat ef;
+	struct exfat_dev* dev;
 	int rc = 0;
 
 	for (pp = argv + 1; *pp; pp++)
@@ -46,13 +47,19 @@ int main(int argc, char* argv[])
 
 	if (argv[2])
 	{
-		if (exfat_mount(&ef, argv[1], "") != 0)
+		dev = exfat_open(argv[1], EXFAT_MODE_RW);
+		if (dev == NULL)
+			return 1;
+		if (exfat_mount(&ef, dev, "") != 0)
 			return 1;
 		rc = (exfat_set_label(&ef, argv[2]) != 0);
 	}
 	else
 	{
-		if (exfat_mount(&ef, argv[1], "ro") != 0)
+		dev = exfat_open(argv[1], EXFAT_MODE_RO);
+		if (dev == NULL)
+			return 1;
+		if (exfat_mount(&ef, dev, "ro") != 0)
 			return 1;
 		puts(exfat_get_label(&ef));
 	}

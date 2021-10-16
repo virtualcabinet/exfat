@@ -180,7 +180,7 @@ static void exfat_free(struct exfat* ef)
 	ef->sb = NULL;
 }
 
-int exfat_mount(struct exfat* ef, const char* spec, const char* options)
+int exfat_mount(struct exfat* ef, struct exfat_dev* dev, const char* options)
 {
 	int rc;
 	enum exfat_mode mode;
@@ -189,16 +189,8 @@ int exfat_mount(struct exfat* ef, const char* spec, const char* options)
 	memset(ef, 0, sizeof(struct exfat));
 
 	parse_options(ef, options);
+	ef->dev = dev;
 
-	if (exfat_match_option(options, "ro"))
-		mode = EXFAT_MODE_RO;
-	else if (exfat_match_option(options, "ro_fallback"))
-		mode = EXFAT_MODE_ANY;
-	else
-		mode = EXFAT_MODE_RW;
-	ef->dev = exfat_open(spec, mode);
-	if (ef->dev == NULL)
-		return -EIO;
 	if (exfat_get_mode(ef->dev) == EXFAT_MODE_RO)
 	{
 		if (mode == EXFAT_MODE_ANY)

@@ -227,7 +227,7 @@ const char* exfat_get_label(struct exfat* ef);
 int exfat_set_label(struct exfat* ef, const char* label);
 
 int exfat_soil_super_block(const struct exfat* ef);
-int exfat_mount(struct exfat* ef, const char* spec, const char* options);
+int exfat_mount(struct exfat* ef, struct exfat_dev* dev, const char* options);
 void exfat_unmount(struct exfat* ef);
 
 time_t exfat_exfat2unix(le16_t date, le16_t time, uint8_t centisec,
